@@ -38,7 +38,7 @@ macro_rules! impl_serde_from_str {
             where
                 S: serde::Serializer,
             {
-                serializer.serialize_str(&self.to_string())
+                serializer.serialize_str(self.as_str())
             }
         }
     };
