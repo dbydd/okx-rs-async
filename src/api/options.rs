@@ -3,6 +3,9 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct Production;
 
+unsafe impl Send for Production {}
+unsafe impl Sync for Production {}
+
 impl OKXEnv for Production {
     fn rest(&self) -> &str {
         "https://www.okx.com/api/v5"
@@ -58,14 +61,14 @@ pub trait OKXEnv {
 
 #[derive(Clone)]
 pub struct Options {
-    pub env: Arc<dyn OKXEnv>,
+    pub env: Arc<dyn OKXEnv+Send+Sync>,
     pub key: Option<String>,
     pub secret: Option<String>,
     pub passphrase: Option<String>,
 }
 
 impl Options {
-    pub fn new(env: impl OKXEnv + 'static) -> Options {
+    pub fn new(env: impl OKXEnv + 'static+Send+Sync) -> Options {
         Self {
             env: Arc::new(env),
             key: None,
@@ -75,7 +78,7 @@ impl Options {
     }
 
     pub fn new_with(
-        env: impl OKXEnv + 'static,
+        env: impl OKXEnv + 'static+Send+Sync,
         key: impl AsRef<str>,
         secret: impl AsRef<str>,
         passphrase: impl AsRef<str>,
