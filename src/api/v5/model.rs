@@ -1146,9 +1146,76 @@ pub struct Candle {
     /// Close price
     #[serde(rename = "c")]
     pub close: f64,
+
     /// The state of candlesticks.
     /// 0 represents that it is uncompleted, 1 represents that it is completed.
     pub confirm: CandleState,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryCandle {
+    /// Opening time of the candlestick, Unix timestamp format in milliseconds, e.g. 1597026383085
+    #[serde(rename = "ts", deserialize_with = "deserialize_u64_from_str")]
+    pub timestamp: u64,
+    /// Open price
+    #[serde(rename = "o", deserialize_with = "deserialize_f64_from_str")]
+    pub open: f64,
+    /// highest price
+    #[serde(rename = "h", deserialize_with = "deserialize_f64_from_str")]
+    pub high: f64,
+    /// Lowest price
+    #[serde(rename = "l", deserialize_with = "deserialize_f64_from_str")]
+    pub low: f64,
+    /// Close price
+    #[serde(rename = "c", deserialize_with = "deserialize_f64_from_str")]
+    pub close: f64,
+    /// Volume
+    #[serde(rename = "vol", deserialize_with = "deserialize_f64_from_str")]
+    pub volume: f64,
+    /// Volume count as coin
+    #[serde(rename = "volCcy", deserialize_with = "deserialize_f64_from_str")]
+    pub volume_count_as_coin: f64,
+    /// Volume count as currency
+    #[serde(rename = "volCcyQuote", deserialize_with = "deserialize_f64_from_str")]
+    pub volume_count_as_currency: f64,
+    /// The state of candlesticks. 0 represents that it is uncompleted, 1 represents that it is completed.
+    #[serde(
+        rename = "confirm",
+        deserialize_with = "deserialize_candle_state_from_str"
+    )]
+    pub confirm: CandleState,
+}
+
+// Custom deserializer for converting String to u64
+fn deserialize_u64_from_str<'de, D>(deserializer: D) -> Result<u64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(deserializer)?;
+    s.parse().map_err(serde::de::Error::custom)
+}
+
+// Custom deserializer for converting String to f64
+fn deserialize_f64_from_str<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(deserializer)?;
+    s.parse().map_err(serde::de::Error::custom)
+}
+
+// Custom deserializer for converting String to CandleState
+fn deserialize_candle_state_from_str<'de, D>(deserializer: D) -> Result<CandleState, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(deserializer)?;
+    match s.as_str() {
+        "0" => Ok(CandleState::Uncompleted),
+        "1" => Ok(CandleState::Completed),
+        _ => Err(serde::de::Error::custom("Invalid candle state")),
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -1319,6 +1386,8 @@ impl<'de> Deserialize<'de> for Candle {
 #[cfg(test)]
 mod tests_parse_candle {
     use crate::api::v5::model::Candle;
+    use serde::{Deserialize, Deserializer};
+    use std::str::FromStr;
 
     #[test]
     /// test deserialization of candle from json string to Candle struct

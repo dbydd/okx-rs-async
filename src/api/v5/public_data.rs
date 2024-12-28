@@ -10,6 +10,8 @@ use crate::api::v5::model::{
 };
 
 pub mod rest {
+    use crate::api::v5::HistoryCandle;
+
     use super::*;
 
     /// https://www.okx.com/docs-v5/en/#public-data-rest-api-get-instruments
@@ -597,6 +599,36 @@ pub mod rest {
         type Response = Vec<Candle>;
     }
 
+    #[derive(Debug, Clone, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct GetHistoryCandles {
+        /// Instrument ID, e.g. BTC-USD-SWAP
+        pub inst_id: String,
+        /// Pagination of data to return records earlier than the requested ts
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub after: Option<u64>,
+        /// Pagination of data to return records newer than the requested ts. The latest data will be returned when using before individually
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub before: Option<u64>,
+        /// Bar size, the default is 1m
+        /// e.g. [1m/3m/5m/15m/30m/1H/2H/4H]
+        /// Hong Kong time opening price k-line：[6H/12H/1D/1W/1M/3M]
+        /// UTC time opening price k-line：[6Hutc/12Hutc/1Dutc/1Wutc/1Mutc/3Mutc]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub bar: Option<String>,
+        /// Number of results per request. The maximum is 100; The default is 100
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub limit: Option<usize>,
+    }
+
+    impl Request for GetHistoryCandles {
+        const METHOD: Method = Method::GET;
+        const PATH: &'static str = "/market/history-candles";
+        const AUTH: bool = false;
+
+        type Response = Vec<HistoryCandle>;
+    }
+
     /// ## Get index components
     /// Get the index component information data on the market
     ///
@@ -646,6 +678,8 @@ pub mod rest {
         /// Price converted to index
         pub cnv_px: f64,
     }
+
+    //refer https://www.okx.com/docs-v5/zh/?shell#order-book-trading-market-data-get-candlesticks-history add this request
 }
 // Websockets
 pub mod websocket {
