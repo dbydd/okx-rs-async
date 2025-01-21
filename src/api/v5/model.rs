@@ -1129,7 +1129,7 @@ pub struct IndexTicker {
     pub ts: Option<u64>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Candle {
     /// Opening time of the candlestick, Unix timestamp format in milliseconds, e.g. 1597026383085
@@ -1152,7 +1152,7 @@ pub struct Candle {
     pub confirm: CandleState,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HistoryCandle {
     /// Opening time of the candlestick, Unix timestamp format in milliseconds, e.g. 1597026383085
