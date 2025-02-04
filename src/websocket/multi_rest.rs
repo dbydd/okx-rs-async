@@ -1,6 +1,7 @@
 use crate::api::credential::Credential;
-use crate::api::error::Error;
+use crate::api::error::{ApiError, Error};
 use crate::api::v5::{ApiResponse, Request};
+use crate::api::Options;
 use chrono::Utc;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{Client, ClientBuilder, Method, Url};
@@ -8,28 +9,25 @@ use std::convert::TryInto;
 use std::str::FromStr;
 use std::time::Duration;
 
-use self::error::ApiError;
-
-mod options;
-
-pub mod credential;
-pub mod error;
-pub use self::options::*;
-
-pub mod v5;
-
-#[cfg(feature = "block")]
-pub mod blocking;
 #[derive(Clone)]
-pub struct Rest {
+pub struct MultiRest {
     options: Options,
-    client: Client,
+    client: Vec<Client>,
+    _len: usize,
 }
 
-impl Rest {
-    pub fn new(options: Options, mut builder: impl FnMut(ClientBuilder) -> ClientBuilder) -> Self {
-        let client = builder(ClientBuilder::new()).build().unwrap();
-        Self { client, options }
+impl MultiRest {
+    pub fn new(
+        options: Options,
+        parallel_count: usize,
+        mut builder: impl FnMut(ClientBuilder) -> ClientBuilder,
+    ) -> Self {
+        let client = vec![builder(ClientBuilder::new()).build().unwrap(); parallel_count];
+        Self {
+            client,
+            options,
+            _len: parallel_count,
+        }
     }
 
     #[inline]
@@ -38,18 +36,24 @@ impl Rest {
     }
 
     #[inline]
-    pub async fn request<R>(&self, req: R) -> crate::api::error::Result<R::Response>
+    pub async fn request_burst<R>(
+        &self,
+        req: R,
+        burst_index: usize,
+    ) -> crate::api::error::Result<R::Response>
     where
         R: Request,
     {
         let mut callback = || {};
-        self.request_with(req, &mut callback).await
+        self.request_burst_with(req, &mut callback, burst_index)
+            .await
     }
 
-    pub async fn request_with<R>(
+    pub async fn request_burst_with<R>(
         &self,
         req: R,
         on_send: &mut (dyn FnMut() + Sync + Send),
+        i: usize,
     ) -> crate::api::error::Result<R::Response>
     where
         R: Request,
@@ -118,8 +122,7 @@ impl Rest {
             }
         }
 
-        let sent = match self
-            .client
+        let sent = match (&self.client[i % self._len])
             .request(R::METHOD, &url)
             .headers(headers)
             .body(body)

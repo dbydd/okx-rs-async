@@ -7,6 +7,7 @@ use crate::api::credential::Credential;
 use crate::api::Options;
 
 pub mod conn;
+pub mod multi_rest;
 
 pub trait WebsocketChannel: Send + Sync {
     const CHANNEL: &'static str;

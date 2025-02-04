@@ -37,7 +37,7 @@ rust_decimal = { version = "1" , optional = true }
 futures-util = "0.3.28"
 
 # FIXME: should be feature-gated
-reqwest = { version = "0.11.22", features = ["json", "blocking"] }
+reqwest = { version = "0.12.12", features = ["json"] }
 chrono = "0.4.38"
 
 [dev-dependencies]
@@ -50,3 +50,4 @@ simd = ["dep:simd-json"]
 websocket = ["dep:tungstenite"]
 example = ["dep:env_logger", "dep:tokio", "websocket"]
 orderbook = ["dep:rust_decimal"]
+block = ["reqwest/blocking"]
